@@ -335,7 +335,8 @@ function animate() {
 	renderer.render( scene, camera );
 //	camera.lookAt(cube.position );
 	camera.rotation.z = 0;
-	for (var i in players)
+	camera.lookAt(ground.position);
+/*	for (var i in players){
 		scene.traverse(function(node) {
 			if (node instanceof THREE.Mesh){
 				if (node.special === true){
@@ -344,6 +345,8 @@ function animate() {
 				}
 			}
 		});
+	}
+*/
 //	updateMovement();
 
 
