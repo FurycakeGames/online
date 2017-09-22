@@ -13,6 +13,6 @@
     "socket.io": "^2.0.3"
   },
   "engines": {
-    "node" "8.5.0"
+    "node" "8.5.x"
   }
 }
