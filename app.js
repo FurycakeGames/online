@@ -30,16 +30,16 @@ var Player = function(id){
 	}
 	self.updatePosition = function(){
 		if (self.pressingRight){
-			self.x += 0.1
+			self.x += 0.15
 		}
 		if (self.pressingLeft){
-			self.x -= 0.1
+			self.x -= 0.15
 		}
 		if (self.pressingUp){
-			self.y += 0.1
+			self.y += 0.15
 		}
 		if (self.pressingDown){
-			self.y -= 0.1
+			self.y -= 0.15
 		}
 	}
 	return self;
@@ -156,4 +156,4 @@ setInterval(function(){
 	
 
 
-}, 1000/60);
+}, 1000/25);
