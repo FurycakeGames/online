@@ -10,7 +10,7 @@ scoretext.style.position = 'absolute';
 scoretext.style.width = 200;
 scoretext.style.height = 200;
 scoretext.style.color = "white";
-scoretext.innerHTML = "Score: " + score;
+scoretext.innerHTML = "COINS: " + score;
 scoretext.style.top = 20 + 'px';
 scoretext.style.left = 20 + 'px';
 document.body.appendChild(scoretext);
@@ -184,7 +184,7 @@ socket.on('coinGrab', function(){
 		score = 0;
 		socket.emit('resetGame');
 	}
-	scoretext.innerHTML = "Score: " + score;
+	scoretext.innerHTML = "COINS: " + score;
 })
 
 
