@@ -85,6 +85,7 @@ socket.on('createPlayers', function(data){
 		cube.position.x = data.list[i].x;
 		cube.position.y = data.list[i].y;
 		cube.position.z = 0;
+		cube.speedZ = 0;
 		cube.playerID = data.list[i].id;
 		console.log(data.list[i].id)
 		players[data.list.id] = cube;
@@ -106,6 +107,7 @@ socket.on('newPlayer', function(data){
 	cube.position.x = data.x;
 	cube.position.y = data.y;
 	cube.position.z = 0;
+	cube.speedZ = 0;
 	cube.playerID = data.id;
 	console.log(data.id)
 	players[data.id] = cube;
@@ -141,13 +143,15 @@ socket.on('newPositions', function(data){
 					if (data[i].id === node.playerID){
 							node.position.x = data[i].x;
 							node.position.y = data[i].y;
+							node.position.z = data[i].z;
 					}						
 				}
 			}
 		}
 	});
 })
-	var coin;
+
+var coin;
 
 socket.on('createCoin', function(data){
 	var coin_material = new THREE.MeshLambertMaterial({color: 0xFFFF00});
@@ -168,8 +172,6 @@ socket.on('coinGrabbed', function(data){
 	coin.position.x = data.x;
 	coin.position.y = data.y;
 })
-
-
 
 var keys = [];
 keys.up = false;
@@ -198,7 +200,7 @@ function createEnemy(){
 	var enemy = new THREE.Mesh(enemy_geometry, enemy_material);
 	ascend(enemy);
 	scene.add(enemy);
-	i = Math.ceil(Math.random() * 3)
+	i = Math.ceil(Math.random() * 3);
 	switch(i) {
     case 3:
 			enemy.position.y = 10;
@@ -275,30 +277,27 @@ function onDocumentKeyDown(event) {
 //		socket.emit('keyPress', {inputId: 'right', state: true})
 	}
 	if (keyCode == 32) {
-		if (keys.jump == false && cube.position.z == 0){
-				cube.speed.z = 0.15;
-				keys.jump = true;
-		}
+		scene.traverse(function(node) {
+			if (node.special === true){
+				if (keys.jump == false && node.position.z == 0){
+					node.speedZ = 0.15;
+					keys.jump = true;
+				}
+			}
+		})
 	}
 };
 
 function jumping() {
-};
-
-function movement(){
 	scene.traverse(function(node) {
 		if (node instanceof THREE.Mesh){
-			if (node.cube){
-				node.position.x += node.speed.x;
-				node.position.y += node.speed.y;
-				node.position.z += node.speed.z;
-				node.rotation.x += node.rotationspeed.x;
-				node.rotation.y += node.rotationspeed.y;
-				node.rotation.z += node.rotationspeed.z;
+			if (node.special){
+//				node.position.z += node.speed.z * dt;
 			}
 		}
 	});
-}
+};
+
 
 var lastUpdate = Date.now();
 //var myInterval = setInterval(tick, 0);
@@ -315,6 +314,9 @@ var dt
 function update(){
 
 	dt = getDeltaTime();
+	if (coin){
+		coin.rotation.z += 0.05 * dt;
+	}
 
 	scene.traverse(function(node) {
 		if (node.special === true){
@@ -330,9 +332,15 @@ function update(){
 			if (keys.down){
 				node.position.y -= 0.05 * dt;
 			}
-			if (keys.down || keys.right || keys.up || keys.left){
-				socket.emit('changePosition', {x: node.position.x, y: node.position.y, id: socketId})
+			//jumping
+			node.position.z += node.speedZ * dt;
+			if (node.position.z > 0){
+				node.speedZ = node.speedZ - 0.01 * dt;
 			}
+			if (node.position.z < 0){
+				node.position.z = 0;
+			}
+			socket.emit('changePosition', {x: node.position.x, y: node.position.y, z: node.position.z, id: socketId})
 		}
 	});
 /*
@@ -382,8 +390,6 @@ function animate() {
 			}
 		});
 	}
-
-	movement();
 	update();
 	jumping();
 

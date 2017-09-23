@@ -90,6 +90,7 @@ io.sockets.on('connection', function(socket){
 	socket.on('changePosition', function(data){
 		PLAYER_LIST[data.id].x = data.x;
 		PLAYER_LIST[data.id].y = data.y;
+		PLAYER_LIST[data.id].z = data.z;
 	});
 
 
@@ -128,6 +129,7 @@ setInterval(function(){
 		pack.push({
 			x:player.x,
 			y:player.y,
+			z:player.z,
 			id:player.id
 		});
 	}
@@ -141,4 +143,4 @@ setInterval(function(){
 			socket.broadcast.emit('coinGrabbed', coin);			
 		}
 	}
-}, 1000/30);
+}, 1000/60);
