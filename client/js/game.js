@@ -136,10 +136,9 @@ socket.on('usergone', function(data){
 socket.on('newPositions', function(data){
 	scene.traverse(function(node) {
 		if (node instanceof THREE.Mesh){
-			if (node.player === true){
+			if (node.player === true && node.special !== true){
 				for (var i in data){
 					if (data[i].id === node.playerID){
-//							console.log('iii')
 							node.position.x = data[i].x;
 							node.position.y = data[i].y;
 					}						
@@ -236,16 +235,20 @@ document.addEventListener("keyup", onDocumentKeyUp, false);
 function onDocumentKeyUp(event) {
 	var keyCode = event.which;
 	if (keyCode == 38) {
-		socket.emit('keyPress', {inputId: 'up', state: false})
+		keys.up = false;
+//		socket.emit('keyPress', {inputId: 'up', state: false})
 	}
 	if (keyCode == 40) {
-		socket.emit('keyPress', {inputId: 'down', state: false})
+		keys.down = false;
+//		socket.emit('keyPress', {inputId: 'down', state: false})
 	}
 	if (keyCode == 37) {
-		socket.emit('keyPress', {inputId: 'left', state: false})
+		keys.left = false;
+//		socket.emit('keyPress', {inputId: 'left', state: false})
 	}
 	if (keyCode == 39) {
-		socket.emit('keyPress', {inputId: 'right', state: false})
+		keys.right = false;
+//		socket.emit('keyPress', {inputId: 'right', state: false})
 	}
 	if (keyCode == 32) {
 			keys.jump = false;
@@ -256,16 +259,20 @@ document.addEventListener("keydown", onDocumentKeyDown, false);
 function onDocumentKeyDown(event) {
 	var keyCode = event.which;
 	if (keyCode == 38) {
-		socket.emit('keyPress', {inputId: 'up', state: true})
+		keys.up = true;
+//		socket.emit('keyPress', {inputId: 'up', state: true})
 	}
 	if (keyCode == 40) {
-		socket.emit('keyPress', {inputId: 'down', state: true})
+		keys.down = true;
+//		socket.emit('keyPress', {inputId: 'down', state: true})
 	}
 	if (keyCode == 37) {
-		socket.emit('keyPress', {inputId: 'left', state: true})
+		keys.left = true;
+//		socket.emit('keyPress', {inputId: 'left', state: true})
 	}
 	if (keyCode == 39) {
-		socket.emit('keyPress', {inputId: 'right', state: true})
+		keys.right = true;
+//		socket.emit('keyPress', {inputId: 'right', state: true})
 	}
 	if (keyCode == 32) {
 		if (keys.jump == false && cube.position.z == 0){
@@ -297,9 +304,25 @@ function movement(){
 
 function update(){
 
-
-
-
+	scene.traverse(function(node) {
+		if (node.special === true){
+			if (keys.left){
+				node.position.x -= 0.05;
+			}
+			if (keys.right){
+				node.position.x += 0.05;
+			}
+			if (keys.up){
+				node.position.y += 0.05;				
+			}
+			if (keys.down){
+				node.position.y -= 0.05;
+			}
+			if (keys.down || keys.right || keys.up || keys.left){
+				socket.emit('changePosition', {x: node.position.x, y: node.position.y, id: socketId})
+			}
+		}
+	});
 /*
 	scene.traverse(function(node) {
 		if (node instanceof THREE.Mesh){
@@ -331,12 +354,13 @@ function update(){
 
 
 function animate() {
+
 	requestAnimationFrame( animate );
 	renderer.render( scene, camera );
 //	camera.lookAt(cube.position );
-	camera.rotation.z = 0;
-	camera.lookAt(ground.position);
-/*	for (var i in players){
+//	camera.rotation.z = 0;
+//	camera.lookAt(ground.position);
+	for (var i in players){
 		scene.traverse(function(node) {
 			if (node instanceof THREE.Mesh){
 				if (node.special === true){
@@ -346,13 +370,11 @@ function animate() {
 			}
 		});
 	}
-*/
-//	updateMovement();
-
-
 
 	movement();
 	update();
 	jumping();
+
+//	updateMovement();
 };
 animate();

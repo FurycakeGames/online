@@ -27,6 +27,7 @@ var Player = function(id){
 		y:Math.random() * 5 - 2.5,
 		z: 0,
 		id: id,
+		score: 0,
 	}
 	self.updatePosition = function(){
 		if (self.pressingRight){
@@ -100,9 +101,10 @@ io.sockets.on('connection', function(socket){
 
 	socket.broadcast.emit('newPlayer', player);
 
-	socket.on('newConnection', function(){
-
-	})
+	socket.on('changePosition', function(data){
+		PLAYER_LIST[data.id].x = data.x;
+		PLAYER_LIST[data.id].y = data.y;
+	});
 
 
 	socket.on('keyPress', function(data){
