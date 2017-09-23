@@ -29,9 +29,9 @@ var Player = function(id){
 		id: id,
 		score: 0,
 	}
+
+	return self;
 }
-
-
 
 var Enemy = function(){
 	var self = {
@@ -123,15 +123,7 @@ io.sockets.on('connection', function(socket){
 
 setInterval(function(){
 	var pack = [];
-	for (var i in PLAYER_LIST){
-		var player = PLAYER_LIST[i];
-		player.updatePosition();
-		pack.push({
-			x:player.x,
-			y:player.y,
-			id:player.id
-		});
-	}
+
 
 
 
