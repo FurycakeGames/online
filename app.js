@@ -1,12 +1,3 @@
-var lastUpdate = Date.now();
-
-function getDeltaTime(){
-	var now = Date.now()
-	var interval = (now - lastUpdate) / (1000 / 60);
-	lastUpdate = now;
-	return interval
-}
-
 var express = require('express');
 var app = express();
 var serv = require('http').Server(app);
