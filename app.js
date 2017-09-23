@@ -1,3 +1,12 @@
+var lastUpdate = Date.now();
+
+function getDeltaTime(){
+	var now = Date.now()
+	var interval = (now - lastUpdate) / (1000 / 60);
+	lastUpdate = now;
+	return interval
+}
+
 var express = require('express');
 var app = express();
 var serv = require('http').Server(app);
@@ -29,22 +38,9 @@ var Player = function(id){
 		id: id,
 		score: 0,
 	}
-	self.updatePosition = function(){
-		if (self.pressingRight){
-			self.x += 0.15
-		}
-		if (self.pressingLeft){
-			self.x -= 0.15
-		}
-		if (self.pressingUp){
-			self.y += 0.15
-		}
-		if (self.pressingDown){
-			self.y -= 0.15
-		}
-	}
-	return self;
 }
+
+
 
 var Enemy = function(){
 	var self = {

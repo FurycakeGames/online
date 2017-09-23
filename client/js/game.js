@@ -300,23 +300,35 @@ function movement(){
 	});
 }
 
+var lastUpdate = Date.now();
+//var myInterval = setInterval(tick, 0);
 
+function getDeltaTime(){
+	var now = Date.now()
+	var interval = (now - lastUpdate) / (1000 / 60);
+	lastUpdate = now;
+	return interval
+}
+
+var dt
 
 function update(){
+
+	dt = getDeltaTime();
 
 	scene.traverse(function(node) {
 		if (node.special === true){
 			if (keys.left){
-				node.position.x -= 0.05;
+				node.position.x -= 0.05 * dt;
 			}
 			if (keys.right){
-				node.position.x += 0.05;
+				node.position.x += 0.05 * dt;
 			}
 			if (keys.up){
-				node.position.y += 0.05;				
+				node.position.y += 0.05 * dt;
 			}
 			if (keys.down){
-				node.position.y -= 0.05;
+				node.position.y -= 0.05 * dt;
 			}
 			if (keys.down || keys.right || keys.up || keys.left){
 				socket.emit('changePosition', {x: node.position.x, y: node.position.y, id: socketId})
