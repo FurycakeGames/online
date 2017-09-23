@@ -27,9 +27,8 @@ var Player = function(id){
 		y:Math.random() * 5 - 2.5,
 		z: 0,
 		id: id,
-		score: 0,
+		score: 0
 	}
-
 	return self;
 }
 
@@ -123,7 +122,15 @@ io.sockets.on('connection', function(socket){
 
 setInterval(function(){
 	var pack = [];
-
+	for (var i in PLAYER_LIST){
+		var player = PLAYER_LIST[i];
+//		player.updatePosition();
+		pack.push({
+			x:player.x,
+			y:player.y,
+			id:player.id
+		});
+	}
 
 
 
@@ -134,7 +141,4 @@ setInterval(function(){
 			socket.broadcast.emit('coinGrabbed', coin);			
 		}
 	}
-	
-
-
-}, 1000/25);
+}, 1000/30);
