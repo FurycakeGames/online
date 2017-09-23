@@ -16,10 +16,10 @@ scoretext.style.left = 20 + 'px';
 document.body.appendChild(scoretext);
 
 function getDistance(mesh1, mesh2) { 
-  var dx = mesh1.position.x - mesh2.position.x; 
-  var dy = mesh1.position.y - mesh2.position.y; 
-  var dz = mesh1.position.z - mesh2.position.z; 
-  return Math.sqrt(dx*dx+dy*dy+dz*dz); 
+	var dx = mesh1.position.x - mesh2.position.x; 
+	var dy = mesh1.position.y - mesh2.position.y; 
+	var dz = mesh1.position.z - mesh2.position.z; 
+	return Math.sqrt(dx*dx+dy*dy+dz*dz); 
 }
 
 var i;
@@ -93,7 +93,6 @@ socket.on('createPlayers', function(data){
 			cube.special = true;
 		}
 		scene.add(cube);
-		console.log('aaa')
 	}
 });
 
@@ -141,6 +140,9 @@ socket.on('newPositions', function(data){
 			if (node.player === true && node.special !== true){
 				for (var i in data){
 					if (data[i].id === node.playerID){
+//							createjs.Tween.get(node.position).to({x: data[i].x}, 1000/30)
+//							createjs.Tween.get(node.position).to({y: data[i].y}, 1000/30)
+//							createjs.Tween.get(node.position).to({z: data[i].z}, 1000/30)
 							node.position.x = data[i].x;
 							node.position.y = data[i].y;
 							node.position.z = data[i].z;
@@ -151,6 +153,22 @@ socket.on('newPositions', function(data){
 	});
 })
 
+
+socket.on('enemyPositions', function(data){
+	scene.traverse(function(node) {
+		if (node instanceof THREE.Mesh){
+			for (var i in data){
+				if (data[i].id === node.enemyID){
+						node.position.x = data[i].x;
+						node.position.y = data[i].y;
+						node.position.z = data[i].z;
+				}						
+			}
+		}
+	});
+})
+
+
 var coin;
 
 socket.on('createCoin', function(data){
@@ -160,15 +178,42 @@ socket.on('createCoin', function(data){
 	coin.position.x = data.x;
 	coin.position.y = data.y;
 	coin.position.z = 0.2;
-	ascend(coin);
 	coin.cube = true;
-	coin.rotationspeed.z = 0.05;
 	coin.castShadow = true;
 	coin.coin = true;
-	scene.add( coin );
+	scene.add(coin);
 })
 
+
+socket.on('createEnemies', function(data){
+	for (var i in data){
+		var enemy = new THREE.Mesh(new THREE.CubeGeometry(0.5, 0.5, 0.5), new THREE.MeshNormalMaterial());
+		enemy.castShadow = true;
+		enemy.enemy = true;
+		enemy.position.x = data[i].x;
+		enemy.position.y = data[i].y;
+		enemy.position.z = data[i].z;
+		enemy.enemyID = data[i].id;
+		scene.add(enemy);
+	}
+});
+
+
+socket.on('newEnemy', function(data){
+	var enemy = new THREE.Mesh(new THREE.CubeGeometry(0.5, 0.5, 0.5), new THREE.MeshNormalMaterial());
+	enemy.castShadow = true;
+	enemy.enemy = true;
+	enemy.position.x = data.x;
+	enemy.position.y = data.y;
+	enemy.position.z = data.z;
+	enemy.enemyID = data.id;
+	scene.add(enemy);
+})
+
+
 socket.on('coinGrabbed', function(data){
+//	createjs.Tween.get(coin.position).to({x: data.x}, 1000)
+//	createjs.Tween.get(coin.position).to({y: data.y}, 1000)
 	coin.position.x = data.x;
 	coin.position.y = data.y;
 })
@@ -182,37 +227,25 @@ keys.jump = false;
 
 
 
-function ascend(self){
-	self.speed = [];
-	self.speed.x = 0;
-	self.speed.y = 0;
-	self.speed.z = 0;
-	self.rotationspeed = [];
-	self.rotationspeed.x = 0;
-	self.rotationspeed.y = 0;
-	self.rotationspeed.z = 0;
-}
-
 
 function createEnemy(){
 	var enemy_geometry = new THREE.CubeGeometry(0.5, 0.5, 0.5);
 	var enemy_material = new THREE.MeshNormalMaterial();
 	var enemy = new THREE.Mesh(enemy_geometry, enemy_material);
-	ascend(enemy);
 	scene.add(enemy);
 	i = Math.ceil(Math.random() * 3);
 	switch(i) {
-    case 3:
+		case 3:
 			enemy.position.y = 10;
 			enemy.position.x = Math.random() * 5 - 2.5;
 			enemy.speed.y = -0.05 * Math.random() - 0.03;
-      break;
-    case 2:
+			break;
+		case 2:
 			enemy.position.x = -10;
 			enemy.position.y = Math.random() * 5 - 2.5;
 			enemy.speed.x = 0.05 * Math.random() + 0.03;
-       break;
-    case 1:
+			 break;
+		case 1:
 			enemy.position.x = 10;
 			enemy.position.y = Math.random() * 5 - 2.5;
 			enemy.speed.x = -0.05 * Math.random() - 0.03;
@@ -252,7 +285,7 @@ function onDocumentKeyUp(event) {
 		keys.right = false;
 //		socket.emit('keyPress', {inputId: 'right', state: false})
 	}
-	if (keyCode == 32) {
+	if (keyCode == 90) {
 			keys.jump = false;
 	}
 };
@@ -276,7 +309,7 @@ function onDocumentKeyDown(event) {
 		keys.right = true;
 //		socket.emit('keyPress', {inputId: 'right', state: true})
 	}
-	if (keyCode == 32) {
+	if (keyCode == 90) {
 		scene.traverse(function(node) {
 			if (node.special === true){
 				if (keys.jump == false && node.position.z == 0){
@@ -321,17 +354,18 @@ function update(){
 	scene.traverse(function(node) {
 		if (node.special === true){
 			if (keys.left){
-				node.position.x -= 0.05 * dt;
+				node.position.x = Math.max(node.position.x - 0.05 * dt, -2.4);
 			}
 			if (keys.right){
-				node.position.x += 0.05 * dt;
-			}
-			if (keys.up){
-				node.position.y += 0.05 * dt;
+				node.position.x = Math.min(node.position.x + 0.05 * dt, 2.4);
 			}
 			if (keys.down){
-				node.position.y -= 0.05 * dt;
+				node.position.y = Math.max(node.position.y - 0.05 * dt, -2.4);
 			}
+			if (keys.up){
+				node.position.y = Math.min(node.position.y + 0.05 * dt, 2.4);
+			}
+
 			//jumping
 			node.position.z += node.speedZ * dt;
 			if (node.position.z > 0){
@@ -343,32 +377,20 @@ function update(){
 			socket.emit('changePosition', {x: node.position.x, y: node.position.y, z: node.position.z, id: socketId})
 		}
 	});
-/*
+
 	scene.traverse(function(node) {
 		if (node instanceof THREE.Mesh){
 			if (node.enemy){
-				if (node.position.x < -12 || node.position.x > 12 || node.position.y < -12){
-					scene.remove(node)
-					createEnemy()
-				}
-				if (getDistance(node, cube) < 0.4){
-					scene.remove(cube)
-					scoretext.innerHTML = "x.x moristeS, Score: " + score;
-				}
+				scene.traverse(function(nodo){
+					if (nodo.special === true && getDistance(node, nodo) < 0.4){
+						socket.emit('playerDeath', socketId)
+						scene.remove(nodo)
+					}
+				})
 			}
-			if (node.coin){
-				if (getDistance(node, cube) < 0.4){
-					score += 1;
-					scoretext.innerHTML = "Score: " + score;
-					scene.remove(node);
-					createCoin();
-					createEnemy();
-				}
-			}
-
 		}
 	});
-*/
+
 
 }
 

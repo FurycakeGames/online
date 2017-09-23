@@ -32,18 +32,51 @@ var Player = function(id){
 	return self;
 }
 
-var Enemy = function(){
+var Enemy = function(id){
 	var self = {
 		x:0,
 		y:0,
-		z:0,
-		id:id,
+		z:0.1,
 		speedX:0,
 		speedY:0,
 		speedZ:0,
+		id:id,
 	}
-}
+	self.resetPosition = function(){
+		var i = Math.ceil(Math.random() * 3);
+		switch(i) {
+			case 3:
+				self.y = 10;
+				self.x = Math.random() * 5 - 2.5;
+				self.speedY = -0.07 * Math.random() - 0.05;
+				self.speedX = 0;
+				break;
+			case 2:
+				self.x = -10;
+				self.y = Math.random() * 5 - 2.5;
+				self.speedX = 0.07 * Math.random() + 0.05;
+				self.speedY = 0;
+				break;
+			case 1:
+				self.x = 10;
+				self.y = Math.random() * 5 - 2.5;
+				self.speedX = -0.07 * Math.random() - 0.05;
+				self.speedY = 0;
+		}		
+	}
+	self.resetPosition();
 
+	self.updatePosition = function(){
+		self.x += self.speedX;
+		self.y += self.speedY;
+		self.z += self.speedZ;
+		if (self.x > 11 || self.y > 11 || self.x < -11){
+			self.resetPosition();
+		}
+	}
+
+	return self;
+}
 
 var Coin = function(){
 	var self = {
@@ -65,7 +98,6 @@ var Coin = function(){
 
 var coin = Coin();
 
-
 var io = require('socket.io')(serv,{});
 io.sockets.on('connection', function(socket){
 	socket.id = Math.random();
@@ -83,7 +115,10 @@ io.sockets.on('connection', function(socket){
 		list: PLAYER_LIST,
 		id: socket.id,
 	};
+
 	socket.emit('createPlayers', createPlayers);
+
+	socket.emit('createEnemies', ENEMY_LIST);
 
 	socket.broadcast.emit('newPlayer', player);
 
@@ -92,7 +127,6 @@ io.sockets.on('connection', function(socket){
 		PLAYER_LIST[data.id].y = data.y;
 		PLAYER_LIST[data.id].z = data.z;
 	});
-
 
 	socket.on('keyPress', function(data){
 		if (data.inputId === 'left'){
@@ -109,14 +143,15 @@ io.sockets.on('connection', function(socket){
 		}
 	})
 
+	socket.on('playerDeath', function(data){
+		socket.broadcast.emit('usergone', {'left_user': data});
+	})
 
   socket.on('disconnect', function(){
 		delete SOCKET_LIST[socket.id];
 		delete PLAYER_LIST[socket.id];
 		console.log('disconnected ' + socket_id)
-		socket.broadcast.emit('usergone', {
-    	'left_user' : socket_id
-    });
+		socket.broadcast.emit('usergone', {'left_user': socket_id});
   })
 });
 
@@ -134,13 +169,32 @@ setInterval(function(){
 		});
 	}
 
-
-
 	for (var i in SOCKET_LIST){
 		var socket = SOCKET_LIST[i];
 		socket.emit('newPositions', pack);
-		if (coin.checkCollision()){
-			socket.broadcast.emit('coinGrabbed', coin);			
-		}
 	}
-}, 1000/60);
+
+	for (var i in ENEMY_LIST){
+
+		var enemy = ENEMY_LIST[i];
+		enemy.updatePosition();
+		pack.push({
+			x:enemy.x,
+			y:enemy.y,
+			z:enemy.z,
+			id:enemy.id,
+		});
+	}
+
+	for (var i in SOCKET_LIST){
+		var socket = SOCKET_LIST[i];
+		socket.emit('enemyPositions', pack);
+	}
+
+	if (coin.checkCollision()){
+		socket.broadcast.emit('coinGrabbed', coin);
+		var enemy = Enemy(Math.random());
+		ENEMY_LIST[enemy.id] = enemy;
+		socket.broadcast.emit('newEnemy', enemy);
+	}
+}, 1000/30);
