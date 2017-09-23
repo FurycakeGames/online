@@ -116,12 +116,6 @@ socket.on('newPlayer', function(data){
 
 
 socket.on('usergone', function(data){
-	console.log(data.left_user)
-	for (var i in players){
-		if (players[i].playerID === data.left_user){
-			scene.remove(players[i]);
-		}
-	}
 	scene.traverse(function(node) {
 		if (node instanceof THREE.Mesh){
 			if (node.player === true){
@@ -184,6 +178,15 @@ socket.on('createCoin', function(data){
 	scene.add(coin);
 })
 
+socket.on('coinGrab', function(){
+	score += 1;
+	if (score === 25){
+		score = 0;
+		socket.emit('resetGame');
+	}
+	scoretext.innerHTML = "Score: " + score;
+})
+
 
 socket.on('createEnemies', function(data){
 	for (var i in data){
@@ -210,7 +213,6 @@ socket.on('newEnemy', function(data){
 	scene.add(enemy);
 })
 
-
 socket.on('coinGrabbed', function(data){
 //	createjs.Tween.get(coin.position).to({x: data.x}, 1000)
 //	createjs.Tween.get(coin.position).to({y: data.y}, 1000)
@@ -225,44 +227,15 @@ keys.right = false;
 keys.down = false;
 keys.jump = false;
 
-
-
-
-function createEnemy(){
-	var enemy_geometry = new THREE.CubeGeometry(0.5, 0.5, 0.5);
-	var enemy_material = new THREE.MeshNormalMaterial();
-	var enemy = new THREE.Mesh(enemy_geometry, enemy_material);
-	scene.add(enemy);
-	i = Math.ceil(Math.random() * 3);
-	switch(i) {
-		case 3:
-			enemy.position.y = 10;
-			enemy.position.x = Math.random() * 5 - 2.5;
-			enemy.speed.y = -0.05 * Math.random() - 0.03;
-			break;
-		case 2:
-			enemy.position.x = -10;
-			enemy.position.y = Math.random() * 5 - 2.5;
-			enemy.speed.x = 0.05 * Math.random() + 0.03;
-			 break;
-		case 1:
-			enemy.position.x = 10;
-			enemy.position.y = Math.random() * 5 - 2.5;
-			enemy.speed.x = -0.05 * Math.random() - 0.03;
-	}
-
-	enemy.position.z = 0.1
-	enemy.cube = true;
-	enemy.receiveShadow = true;
-	enemy.castShadow = true;
-	enemy.enemy = true;
-}
-
-//			createEnemy();
-//			createEnemy();
-//			createEnemy();
-
-
+socket.on('deleteEnemies', function(data){	
+	scene.traverse(function(node) {
+		if (node.enemy) {
+			setTimeout(function(){
+				scene.remove(node);
+			}, 1)
+		}
+	})
+})
 
 
 

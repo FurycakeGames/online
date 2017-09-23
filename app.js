@@ -78,6 +78,9 @@ var Enemy = function(id){
 	return self;
 }
 
+var lastGrabbed;
+
+
 var Coin = function(){
 	var self = {
 		x:Math.random() * 4 - 2,
@@ -89,6 +92,7 @@ var Coin = function(){
 		  if (checkDistance(PLAYER_LIST[i], self) < 0.3){
 		  	self.x = Math.random() * 4 - 2;
 		  	self.y = Math.random() * 4 - 2;
+		  	lastGrabbed = PLAYER_LIST[i].id;
 				return true;
 			}
 		}
@@ -141,6 +145,11 @@ io.sockets.on('connection', function(socket){
 		if (data.inputId === 'down'){
 			player.pressingDown = data.state;
 		}
+	})
+
+	socket.on('resetGame', function(){
+		socket.broadcast.emit('deleteEnemies', ENEMY_LIST)
+		ENEMY_LIST = {};
 	})
 
 	socket.on('playerDeath', function(data){
@@ -196,5 +205,7 @@ setInterval(function(){
 		var enemy = Enemy(Math.random());
 		ENEMY_LIST[enemy.id] = enemy;
 		socket.broadcast.emit('newEnemy', enemy);
+		var socket = SOCKET_LIST[lastGrabbed];
+		socket.emit('coinGrab');
 	}
 }, 1000/30);
