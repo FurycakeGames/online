@@ -10,6 +10,14 @@ app.use('/client', express.static(__dirname + '/client'));
 serv.listen(process.env.PORT || 2000);
 console.log('Server started.')
 
+var players_alive = 0;
+var players_connected = 0;
+var playing = false;
+
+function countProperties(obj) {
+	return Object.keys(obj).length;
+}
+
 function checkDistance(a, b){
   var dx = a.x - b.x;
   var dy = a.y - b.y;
@@ -27,7 +35,8 @@ var Player = function(id){
 		y:Math.random() * 5 - 2.5,
 		z: 0,
 		id: id,
-		score: 0
+		score: 0,
+		username: 0,
 	}
 	return self;
 }
@@ -104,6 +113,11 @@ var coin = Coin();
 
 var io = require('socket.io')(serv,{});
 io.sockets.on('connection', function(socket){
+	players_connected += 1;
+	players_alive += 1;
+	if (!playing){
+
+	}
 	socket.id = Math.random();
 	var socket_id = socket.id;
 	SOCKET_LIST[socket.id] = socket;
@@ -120,7 +134,13 @@ io.sockets.on('connection', function(socket){
 		id: socket.id,
 	};
 
-	socket.emit('createPlayers', createPlayers);
+	socket.emit('emitSocketId', socket_id);
+
+	socket.on('setUsername', function(data){
+		PLAYER_LIST[socket.id].username = data;
+		socket.emit('createPlayers', createPlayers);
+	})
+
 
 	socket.emit('createEnemies', ENEMY_LIST);
 
@@ -147,19 +167,37 @@ io.sockets.on('connection', function(socket){
 		}
 	})
 
+	socket.on('endGame', function(){
+
+	})
+
 	socket.on('resetGame', function(){
-		socket.broadcast.emit('deleteEnemies', ENEMY_LIST)
-		ENEMY_LIST = {};
+
 	})
 
 	socket.on('playerDeath', function(data){
+		players_alive -= 1;
+		console.log('alive ' + players_alive);
+		console.log('connected ' + players_connected);
+
 		socket.broadcast.emit('usergone', {'left_user': data});
+		if(players_alive === 0){
+			socket.broadcast.emit('deleteEnemies', ENEMY_LIST);
+			ENEMY_LIST = {};
+		}
 	})
 
   socket.on('disconnect', function(){
+		players_connected -= 1;
+		console.log('alive ' + players_alive);
 		delete SOCKET_LIST[socket.id];
 		delete PLAYER_LIST[socket.id];
 		console.log('disconnected ' + socket_id)
+		console.log('alive ' + players_alive);
+		console.log('connected ' + players_connected);
+		if(players_connected === 0){
+			ENEMY_LIST = {};
+		}
 		socket.broadcast.emit('usergone', {'left_user': socket_id});
   })
 });
@@ -205,7 +243,19 @@ setInterval(function(){
 		var enemy = Enemy(Math.random());
 		ENEMY_LIST[enemy.id] = enemy;
 		socket.broadcast.emit('newEnemy', enemy);
-		var socket = SOCKET_LIST[lastGrabbed];
-		socket.emit('coinGrab');
+		PLAYER_LIST[lastGrabbed].score += 1;
+		if (PLAYER_LIST[lastGrabbed].score === 25){
+			for (var i in PLAYER_LIST){
+				PLAYER_LIST[i].score = 0;
+			}
+			socket.broadcast.emit('deleteEnemies', ENEMY_LIST);
+			ENEMY_LIST = {};
+		}
+		else{
+			console.log(PLAYER_LIST[lastGrabbed].score);
+			console.log(PLAYER_LIST);
+			socket.broadcast.emit('coinGrab', PLAYER_LIST);
+		}
 	}
+
 }, 1000/30);

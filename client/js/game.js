@@ -1,8 +1,16 @@
+var username = window.location.search.substring(10, window.location.search.length);
+
+console.log(username);
+
 var socket = io();
-var user = Math.random();
 
-var score = 0;
+var socketId;
 
+socket.on('emitSocketId', function(data){
+	socketId = data;	
+})
+
+socket.emit('setUsername', username);
 
 var scoretext = document.createElement('div');
 scoretext.style.position = 'absolute';
@@ -10,8 +18,8 @@ scoretext.style.position = 'absolute';
 scoretext.style.width = 200;
 scoretext.style.height = 200;
 scoretext.style.color = "white";
-scoretext.innerHTML = "COINS: " + score;
-scoretext.style.top = 20 + 'px';
+refreshScoreTable();
+scoretext.style.top = 50 + 'px';
 scoretext.style.left = 20 + 'px';
 document.body.appendChild(scoretext);
 
@@ -46,8 +54,8 @@ light.castShadow = true;            // default false
 scene.add( light );
 
 //Set up shadow properties for the light
-light.shadow.mapSize.width = 1024;  // default
-light.shadow.mapSize.height = 1024; // default
+light.shadow.mapSize.width = 256;  // default
+light.shadow.mapSize.height = 256; // default
 light.shadow.camera.near = 0.5;       // default
 light.shadow.camera.far = 1000      // default
 
@@ -69,10 +77,7 @@ selfCreated = false;
 
 PLAYER_LIST = [];
 
-var socketId;
-
 socket.on('createPlayers', function(data){
-	socketId = data.id;
 	for (var i in data.list){
 		console.log(data.list[i])
 		var cube_material = new THREE.MeshLambertMaterial({color:"red"});
@@ -82,6 +87,7 @@ socket.on('createPlayers', function(data){
 		var cube = new THREE.Mesh(new THREE.CubeGeometry(0.3, 0.3, 0.3), cube_material);
 		cube.castShadow = true;
 		cube.player = true
+		cube.score = data.list[i].score;
 		cube.position.x = data.list[i].x;
 		cube.position.y = data.list[i].y;
 		cube.position.z = 0;
@@ -156,7 +162,7 @@ socket.on('enemyPositions', function(data){
 						node.position.x = data[i].x;
 						node.position.y = data[i].y;
 						node.position.z = data[i].z;
-				}						
+				}
 			}
 		}
 	});
@@ -178,13 +184,15 @@ socket.on('createCoin', function(data){
 	scene.add(coin);
 })
 
-socket.on('coinGrab', function(){
-	score += 1;
-	if (score === 25){
-		score = 0;
-		socket.emit('resetGame');
-	}
-	scoretext.innerHTML = "COINS: " + score;
+socket.on('coinGrab', function(data){
+	console.log(data);
+	refreshScoreTable(data);
+
+//	if (score === 25){
+//		score = 0;
+//		socket.emit('resetGame');
+//	}
+//	scoretext.innerHTML = "COINS: " + score;
 })
 
 
@@ -212,6 +220,21 @@ socket.on('newEnemy', function(data){
 	enemy.enemyID = data.id;
 	scene.add(enemy);
 })
+
+function refreshScoreTable(data){
+	var text = 'SCORES: <br /><br />';
+	for (var i in data){
+		if (data[i].id === socketId){
+			text += data[i].username + ': ' + data[i].score + '<br />'
+		}
+	}
+	for (var i in data){
+		if (data[i].id !== socketId){
+			text += data[i].username + ': ' + data[i].score + '<br />'
+		}
+	}
+	scoretext.innerHTML = text;
+}
 
 socket.on('coinGrabbed', function(data){
 //	createjs.Tween.get(coin.position).to({x: data.x}, 1000)
