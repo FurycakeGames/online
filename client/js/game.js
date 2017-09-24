@@ -100,6 +100,7 @@ socket.on('createPlayers', function(data){
 		}
 		scene.add(cube);
 	}
+	refreshScoreTable();
 });
 
 
@@ -258,6 +259,7 @@ socket.on('deleteEnemies', function(data){
 			}, 1)
 		}
 	})
+	refreshScoreTable();
 })
 
 
