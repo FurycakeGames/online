@@ -184,6 +184,7 @@ io.sockets.on('connection', function(socket){
 					PLAYER_LIST[i].alive = true;
 					PLAYER_LIST[i].x = Math.random() * 5 - 2.5;
 					PLAYER_LIST[i].y = Math.random() * 5 - 2.5;
+					PLAYER_LIST[i].score = 0;
 					players_alive += 1
 				}
 				socket.broadcast.emit('createPlayers', PLAYER_LIST);
