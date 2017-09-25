@@ -8,6 +8,8 @@ var socketId;
 
 socket.on('emitSocketId', function(data){
 	socketId = data;	
+	refreshScoreTable();
+
 })
 
 socket.emit('setUsername', username);
@@ -78,29 +80,31 @@ selfCreated = false;
 PLAYER_LIST = [];
 
 socket.on('createPlayers', function(data){
-	for (var i in data.list){
-		console.log(data.list[i])
-		var cube_material = new THREE.MeshLambertMaterial({color:"red"});
-		if (data.list[i].id == data.id){
-			cube_material = new THREE.MeshLambertMaterial({color:"blue"});
+	for (var i in data){
+		if (data[i].alive){
+			console.log(data[i])
+			var cube_material = new THREE.MeshLambertMaterial({color:"red"});
+			if (data[i].id === socketId){
+				cube_material = new THREE.MeshLambertMaterial({color:"blue"});
+			}
+			var cube = new THREE.Mesh(new THREE.CubeGeometry(0.3, 0.3, 0.3), cube_material);
+			cube.castShadow = true;
+			cube.player = true
+			cube.score = data[i].score;
+			cube.position.x = data[i].x;
+			cube.position.y = data[i].y;
+			cube.position.z = 0;
+			cube.speedZ = 0;
+			cube.playerID = data[i].id;
+			console.log(data[i].id)
+			players[data.id] = cube;
+			if (data[i].id === socketId){
+				cube.special = true;
+			}
+			scene.add(cube);
 		}
-		var cube = new THREE.Mesh(new THREE.CubeGeometry(0.3, 0.3, 0.3), cube_material);
-		cube.castShadow = true;
-		cube.player = true
-		cube.score = data.list[i].score;
-		cube.position.x = data.list[i].x;
-		cube.position.y = data.list[i].y;
-		cube.position.z = 0;
-		cube.speedZ = 0;
-		cube.playerID = data.list[i].id;
-		console.log(data.list[i].id)
-		players[data.list.id] = cube;
-		if (data.list[i].id == data.id){
-			cube.special = true;
-		}
-		scene.add(cube);
 	}
-	refreshScoreTable();
+	refreshScoreTable(data);
 });
 
 
@@ -119,8 +123,8 @@ socket.on('newPlayer', function(data){
 	players[data.id] = cube;
 	scene.add(cube);
 	}
+	refreshScoreTable();
 });
-
 
 socket.on('usergone', function(data){
 	scene.traverse(function(node) {
@@ -251,7 +255,7 @@ keys.right = false;
 keys.down = false;
 keys.jump = false;
 
-socket.on('deleteEnemies', function(data){	
+socket.on('deleteEnemies', function(){
 	scene.traverse(function(node) {
 		if (node.enemy) {
 			setTimeout(function(){

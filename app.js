@@ -35,6 +35,7 @@ var Player = function(id){
 		y:Math.random() * 5 - 2.5,
 		z: 0,
 		id: id,
+		alive: true,
 		score: 0,
 		username: 0,
 	}
@@ -115,7 +116,7 @@ var io = require('socket.io')(serv,{});
 io.sockets.on('connection', function(socket){
 	players_connected += 1;
 	players_alive += 1;
-	if (!playing){
+	if (playing === false){
 
 	}
 	socket.id = Math.random();
@@ -129,18 +130,12 @@ io.sockets.on('connection', function(socket){
 
 	console.log('socket connection ' + socket.id);
 
-	var createPlayers = {
-		list: PLAYER_LIST,
-		id: socket.id,
-	};
-
 	socket.emit('emitSocketId', socket_id);
 
 	socket.on('setUsername', function(data){
 		PLAYER_LIST[socket.id].username = data;
-		socket.emit('createPlayers', createPlayers);
+		socket.emit('createPlayers', PLAYER_LIST);
 	})
-
 
 	socket.emit('createEnemies', ENEMY_LIST);
 
@@ -179,26 +174,43 @@ io.sockets.on('connection', function(socket){
 		players_alive -= 1;
 		console.log('alive ' + players_alive);
 		console.log('connected ' + players_connected);
-
+		PLAYER_LIST[data].alive = false;
 		socket.broadcast.emit('usergone', {'left_user': data});
 		if(players_alive === 0){
-			socket.broadcast.emit('deleteEnemies', ENEMY_LIST);
+			socket.broadcast.emit('deleteEnemies');
 			ENEMY_LIST = {};
+			if (players_connected > 0){
+				for (var i in PLAYER_LIST){
+					PLAYER_LIST[i].alive = true;
+					PLAYER_LIST[i].x = Math.random() * 5 - 2.5;
+					PLAYER_LIST[i].y = Math.random() * 5 - 2.5;
+					players_alive += 1
+				}
+				socket.broadcast.emit('createPlayers', PLAYER_LIST);
+			}
 		}
 	})
 
   socket.on('disconnect', function(){
 		players_connected -= 1;
+		if (PLAYER_LIST[socket_id].alive === true){
+			players_alive -= 1;
+		}
+		if (players_connected > 0){
+			socket.emit('createPlayers', PLAYER_LIST);
+	  }
+
 		console.log('alive ' + players_alive);
-		delete SOCKET_LIST[socket.id];
-		delete PLAYER_LIST[socket.id];
 		console.log('disconnected ' + socket_id)
 		console.log('alive ' + players_alive);
 		console.log('connected ' + players_connected);
-		if(players_connected === 0){
+		if(players_connected === 0 || players_alive === 0){
+			socket.broadcast.emit('deleteEnemies');
 			ENEMY_LIST = {};
 		}
 		socket.broadcast.emit('usergone', {'left_user': socket_id});
+		delete SOCKET_LIST[socket.id];
+		delete PLAYER_LIST[socket.id];
   })
 });
 
@@ -248,12 +260,10 @@ setInterval(function(){
 			for (var i in PLAYER_LIST){
 				PLAYER_LIST[i].score = 0;
 			}
-			socket.broadcast.emit('deleteEnemies', ENEMY_LIST);
+			socket.broadcast.emit('deleteEnemies');
 			ENEMY_LIST = {};
 		}
 		else{
-			console.log(PLAYER_LIST[lastGrabbed].score);
-			console.log(PLAYER_LIST);
 			socket.broadcast.emit('coinGrab', PLAYER_LIST);
 		}
 	}
